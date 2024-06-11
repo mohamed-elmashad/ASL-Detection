@@ -1,0 +1,88 @@
+import numpy as np
+import cv2
+from tensorflow.keras.models import load_model
+
+model = load_model('../best_model_v3.h5')  # Load your trained model
+target_size = (200, 200)  # Example target size, should match your model's input size
+
+num_to_label = {
+    0: 'A',
+    1: 'B',
+    2: 'C',
+    3: 'D',
+    4: 'E',
+    5: 'F',
+    6: 'G',
+    7: 'H',
+    8: 'I',
+    9: 'J',
+    10: 'K',
+    11: 'L',
+    12: 'M',
+    13: 'N',
+    14: 'O',
+    15: 'P',
+    16: 'Q',
+    17: 'R',
+    18: 'S',
+    19: 'T',
+    20: 'U',
+    21: 'V',
+    22: 'W',
+    23: 'X',
+    24: 'Y',
+    25: 'Z',
+    26: 'del',
+    27: 'nothing',
+    28: 'space'
+}
+
+def preprocess_frame(frame, target_size):
+    frame = crop_to_square(frame)  # Crop the frame to a square
+    frame = cv2.resize(frame, target_size)
+    frame = frame / 255.0  # Normalize to [0, 1] range
+    frame = frame.astype('float32')
+    # add blur to the image
+    frame = cv2.GaussianBlur(frame, (5, 5), 0)
+    frame = np.expand_dims(frame, axis=0)  # Add batch dimension
+    return frame
+
+def crop_to_square(frame):
+    h, w, _ = frame.shape
+    if h > w:
+        diff = (h - w) // 2
+        frame = frame[diff:diff + w, :]
+    else:
+        diff = (w - h) // 2
+        frame = frame[:, diff:diff + h]
+    return frame
+
+cap = cv2.VideoCapture(0)  # Start capturing video from the first webcam
+
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        break
+
+    # Crop the frame to a square before any processing
+    square_frame = crop_to_square(frame)
+
+    # Preprocess the frame
+    processed_frame = preprocess_frame(frame, target_size)
+    prediction = model.predict(processed_frame)
+    
+    # Decode the prediction (depends on your model's output format)
+    predicted_label = np.argmax(prediction)
+
+    # Map the predicted label to the corresponding letter
+    predicted_label = num_to_label[predicted_label]
+    
+    # Display the label on the square frame
+    cv2.putText(square_frame, str(predicted_label), (30, 50), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 0, 0), 2, cv2.LINE_AA)
+    cv2.imshow('Live ASL Recognition', square_frame)
+    
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+cap.release()
+cv2.destroyAllWindows()
