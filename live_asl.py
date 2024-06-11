@@ -2,7 +2,7 @@ import numpy as np
 import cv2
 from tensorflow.keras.models import load_model
 
-model = load_model('../best_model_v3.h5')  # Load your trained model
+model = load_model('../best_model_v5.h5')  # Load your trained model
 target_size = (200, 200)  # Example target size, should match your model's input size
 
 num_to_label = {
